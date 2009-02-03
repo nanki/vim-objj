@@ -11,9 +11,12 @@ if !has('ruby')
   finish
 endif
 
+function! CallRuby(rubystr)
+  execute "ruby ".a:rubystr
+  return s:objj_generic_return
+endfunction
 
 function! objjcomplete#Complete(findstart, base)
-  "findstart = 1 when we need to get the text length
   if a:findstart
     let line = getline('.')
     let i = col('.')
@@ -32,25 +35,22 @@ function! objjcomplete#Complete(findstart, base)
     endwhile
 
     return i
-    "findstart = 0 when we need to return the list of completions
   else
-    let g:objj_completions = []
-    execute "ruby ObjectiveJ::Completion.get_completions('" . a:base . "')"
-    return g:objj_completions
+    return CallRuby("ObjectiveJ::Completion.get_completions('" . a:base . "')")
   endif
 endfunction
 
 echo expand("#:p")
 function! s:DefRuby()
 ruby << RUBY
-$:.concat VIM::evaluate("&runtimepath").split(',')
-require 'lib/objjc'
+$:.concat VIM::evaluate("&runtimepath").split(',').map{|v| File.join(v, 'lib')}
+require 'objjc'
 RUBY
 endfunction
 
 call s:DefRuby()
 
-function s:ObjJPredictType()
+function! s:ObjJPredictType()
   try 
     throw getline('.')[col('.') - 1]
   catch ']'
@@ -79,10 +79,7 @@ function s:ObjJPredictType()
 
     execute printf('normal "ay%dl', end - col('.'))
     let message = getreg('a')
-    let g:return_types = []
-    
-    execute printf("ruby ObjectiveJ::Completion.predict_return_types_from_pair([%s], '%s')", join(map(target, '"\"".v:val."\""'), ","), message)
-    return g:return_types
+    return CallRuby(printf("ObjectiveJ::Completion.predict_return_types_from_pair([%s], '%s')", join(map(target, '"\"".v:val."\""'), ","), message))
   catch ')'
     call search('\S', 'b')
     return s:ObjJPredictType()
@@ -95,20 +92,30 @@ function s:ObjJPredictType()
     try
       throw result
     catch '\<self$'
-      return [ObjJCurrentClass(1), ObjJCurrentClass(0)]
+      return [ObjJCurrentClass(0), ObjJCurrentClass(1)]
     catch '\<super$'
       return [ObjJCurrentClass(1)]
     catch '^\u\w\+$'
       return ['+'.result]
     catch
-      " not implemented.
-      " ObjJFindDefinition()
-      return ['id']
+      return s:ObjJFindDefinition(result)
     endtry
   endtry
 endfunction
 
-function s:ObjJPredictPreType()
+function! s:ObjJFindDefinition(varname)
+  let origline = line('.')
+  let orig = col('.')
+  let pat = '^\s*[-+].*\<'.a:varname.'\>'
+
+  call search(pat, 'b')
+  let line = getline('.')
+  call cursor(origline, orig)
+
+  return CallRuby(printf("ObjectiveJ::Completion.predict_variable_type('%s', '%s')", line, a:varname))
+endfunction
+
+function! s:ObjJPredictPreType()
   let orig = col('.')
 
   call search('\s', 'b')
@@ -119,7 +126,7 @@ function s:ObjJPredictPreType()
   return type
 endfunction
 
-function ObjJCurrentClass(flag)
+function! ObjJCurrentClass(superclass)
   let origline = line('.')
   let orig = col('.')
   let pat = '@implementation\s\+\(\h\w\+\)\s\(:\s*\(\h\w\+\)\)\?'
@@ -127,11 +134,13 @@ function ObjJCurrentClass(flag)
   call search(pat, 'b')
   let matches = matchlist(getline('.'), pat)
   call cursor(origline, orig)
-  if a:flag == 1
-    return matches[3]
+  if a:superclass == 1
+    if len(matches[3])
+      return matches[3]
+    else
+      return CallRuby(printf("ObjectiveJ::Completion.get_superclass('%s')", matches[1]))
+    endif
   else
     return matches[1]
   endif
 endfunction
-
-call extend(g:AutoComplPop_Behavior, {'objj': [{'pattern': '\s\w\+$', 'repeat': 0, 'command': "\<C-x>\<C-o>"}]})

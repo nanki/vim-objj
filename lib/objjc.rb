@@ -1,15 +1,13 @@
-require 'lib/j'
+require 'j'
+require 'vim_helper'
 
-D = ObjectiveJ::Info.new
-
-Dir.chdir(File.dirname(__FILE__))
-Dir['*.jd'].map{|name| Marshal.load(open(name))}.each do |info|
-  D.merge(info)
+unless String.method_defined? :start_with?
+  def String.start_with?(str)
+    Regexp.compile("^#{Regexp.escape(str)}") === self
+  end
 end
 
-D.setup 
-
-class ObjectiveJ
+module ObjectiveJ
   class Completion
     class Item < Hash
       ATTRIBUTES = [:word, :abbr, :menu, :info, :kind, :icase, :dup]
@@ -19,19 +17,14 @@ class ObjectiveJ
           self[key] = hash[key] if hash[key]
         end
       end
-
-      def to_s
-        values = []
-        ATTRIBUTES.each do |key| 
-          values << "'#{key}':'#{self[key]}'" if self[key]
-        end
-        "{#{values.join(',')}}"
-      end
     end
   end
 
   class Completion
     class << self
+      include VimHelper
+      include Helper
+
       def _methods(types, base)
         names = []
 
@@ -64,7 +57,7 @@ class ObjectiveJ
         names
       end
 
-      def _classes(base, current, cursor)
+      def _classes(base)
         D.classes.values.select{|v| v.name.downcase.start_with? base.downcase}
       end
 
@@ -77,8 +70,16 @@ class ObjectiveJ
         case pre.gsub(/[^.\s\[]*$/, '')
         when /\.$/
           # property
+          properties = D.properties.select{|m| m.name.start_with? base}.map do |m|
+            Item.new  :icase => true,
+                      :kind => 'm',
+                      :word => m.name,
+                      :menu => m.class_name
+                      #:abbr => m.description
+          end
+          list.concat properties
         when /\[$/, /^\s+$/, /:\s*$/
-          classes =  self._classes(base, current, cursor).map do |c|
+          classes =  self._classes(base).map do |c|
             Item.new :icase => true,
                     :kind => 't',
                     :word => c.name,
@@ -107,7 +108,7 @@ class ObjectiveJ
         end
 
         list.uniq!
-        VIM::command("call extend(g:objj_completions, [%s])" % list.map{|v| v.to_s}.join(","))
+        _return list
       end
 
       def predict_return_types_from_pair(target, message)
@@ -129,22 +130,33 @@ class ObjectiveJ
             t
           end
         end
-        types.flatten!.to_a.uniq!
-        #p target, message
-        #p types
 
-        types.map!{|v| "'#{v}'"}.uniq
-        
-        VIM::command("call extend(g:return_types, [%s])" % types.join(","))
+        _return types.flatten.to_a.uniq
+      end
+
+      def predict_variable_type(line, varname)
+        md = ObjectiveJ::Info::METHODDEF.match(line)
+        args = md[3].scan(ObjectiveJ::Info::SIGNATURE)
+        info = args.find{|v| v[2].strip == varname}
+        if info 
+          _return strip([info[1]])
+        else
+          _return ['id']
+        end
+      end
+
+      def get_superclass(class_name) 
+        _return D.classes[class_name.strip].superclass.to_s if D.classes[class_name.strip]
       end
     end
   end
 end
-__END__
-expand subclasses
 
-begin 
-  count = types.size
-  types += types.map{|t| D.classes[t].subclasses.to_a }.flatten
-  types.uniq!
-end while types.size != count
+Dir.chdir(File.dirname(__FILE__))
+
+D = ObjectiveJ::Info.new
+Dir['*.jd'].map{|name| Marshal.load(open(name))}.each do |info|
+  D.merge(info)
+end
+
+D.setup 

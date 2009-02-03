@@ -54,3 +54,5 @@ imap <buffer> <C-L> <Esc>:call ObjJSelect(1)<CR>
 imap <buffer> <C-Y> <Esc>:call ObjJSelect(0)<CR>
  map <buffer> <C-Y> <Esc>:call ObjJSelect(0)<CR>
 set omnifunc=objjcomplete#Complete
+
+call extend(g:AutoComplPop_Behavior, {'objj': [{'pattern': '[\[ :\.]\w\+$', 'repeat': 0, 'command': "\<C-X>\<C-O>"}]})
