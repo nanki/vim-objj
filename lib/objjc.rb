@@ -91,12 +91,11 @@ module ObjectiveJ
             Item.new  :icase => true,
                       :kind => 'f',
                       :word => m
-                      #:menu => m.class_name,
                       #:abbr => m.description
           end
           list.concat functions
         else
-          types = VIM.evaluate('s:ObjJPredictPreType()').split
+          types = VIM.evaluate('s:PredictPreType()').split
           methods = self._methods(types, base).map do |m|
             Item.new  :icase => true,
                       :kind => 'f',
@@ -111,20 +110,35 @@ module ObjectiveJ
         _return list
       end
 
-      def predict_return_types_from_pair(target, message)
-        message = message.scan(/[^\]:]+:?/)[0]
-        if target.empty?
-          methods = D.methods.select{|m| !m.class_method?}.select{|m| m.signature.start_with? message}
+      def predict_return_types_from_pair(targets, message)
+        # FIXME tenuki
+        signature = message.scan(/[^\]:]+:?/)[0]
+
+        if targets.empty? 
+          methods = D.methods.select{|m| !m.class_method?}.select{|m| m.signature.start_with? signature}
         else
-          methods = self._methods(target, message)
+          methods = self._methods(targets.flatten, signature)
         end
         
+        methods.reject!{|m| m.signature != signature} unless /:/ === message
+
         types = methods.map do |m|
           t = m.types[0]
-          if t == 'id'
-            target.map do |v|
-              tmp = target.first.gsub('+', '')
-              D.classes[tmp] ? tmp : m.class_name
+          if t == 'id' && !targets.empty?
+            case m.signature
+            when 'alloc'
+              targets.select{|v| /^\+/ === v}.map{|v| v.gsub(/^\+/,'')}
+            when 'init'
+              targets
+            else
+              'id'
+            end
+          elsif t == 'Class' && !targets.empty?
+            case m.signature
+            when 'class'
+              targets.select{|v| !(/^\+/ === v)}.map{|v| v.gsub(/^/,'+')}
+            else
+              '+id'
             end
           else
             t
@@ -135,14 +149,15 @@ module ObjectiveJ
       end
 
       def predict_variable_type(line, varname)
-        md = ObjectiveJ::Info::METHODDEF.match(line)
-        args = md[3].scan(ObjectiveJ::Info::SIGNATURE)
-        info = args.find{|v| v[2].strip == varname}
-        if info 
-          _return strip([info[1]])
-        else
-          _return ['id']
+        if md = ObjectiveJ::Info::METHODDEF.match(line)
+          args = md[3].scan(ObjectiveJ::Info::SIGNATURE)
+          info = args.find{|v| v[2].strip == varname}
+          if info 
+            _return strip([info[1]])
+            return
+          end
         end
+        _return ['id']
       end
 
       def get_superclass(class_name) 

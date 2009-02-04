@@ -40,7 +40,6 @@ function! objjcomplete#Complete(findstart, base)
   endif
 endfunction
 
-echo expand("#:p")
 function! s:DefRuby()
 ruby << RUBY
 $:.concat VIM::evaluate("&runtimepath").split(',').map{|v| File.join(v, 'lib')}
@@ -50,7 +49,7 @@ endfunction
 
 call s:DefRuby()
 
-function! s:ObjJPredictType()
+function! s:PredictType()
   try 
     throw getline('.')[col('.') - 1]
   catch ']'
@@ -72,9 +71,10 @@ function! s:ObjJPredictType()
       normal w
     catch '^\['
       normal %w
-      let target = s:ObjJPredictPreType()
+      let target = s:PredictPreType()
     catch
-      normal w
+      normal "ayew
+      let target = s:FindDefinition(getreg('a'))
     endtry
 
     execute printf('normal "ay%dl', end - col('.'))
@@ -82,7 +82,7 @@ function! s:ObjJPredictType()
     return CallRuby(printf("ObjectiveJ::Completion.predict_return_types_from_pair([%s], '%s')", join(map(target, '"\"".v:val."\""'), ","), message))
   catch ')'
     call search('\S', 'b')
-    return s:ObjJPredictType()
+    return s:PredictType()
   catch '"'
     return ['CPString']
   catch
@@ -92,18 +92,42 @@ function! s:ObjJPredictType()
     try
       throw result
     catch '\<self$'
-      return [ObjJCurrentClass(0), ObjJCurrentClass(1)]
+      return [s:CurrentClass(0), s:CurrentClass(1)]
     catch '\<super$'
-      return [ObjJCurrentClass(1)]
+      return [s:CurrentClass(1)]
     catch '^\u\w\+$'
       return ['+'.result]
     catch
-      return s:ObjJFindDefinition(result)
+      return s:FindDefinition(result)
     endtry
   endtry
 endfunction
 
-function! s:ObjJFindDefinition(varname)
+function! s:MethodPrefix()
+  let origline = line('.')
+  let orig = col('.')
+  let pat = '^\s*\([-+]\)'
+
+  call search(pat, 'b')
+  let matches = matchlist(getline('.'), pat)
+
+  call cursor(origline, orig)
+
+  if matches[1] == '+'
+    return '+'
+  else
+    return ''
+  endif
+endfunction
+
+function! s:FindDefinition(varname)
+  try
+    throw a:varname
+  catch 'super'
+    return [s:CurrentClass(1)]
+  catch 'self'
+    return [s:CurrentClass(0), s:CurrentClass(1)]
+  catch
   let origline = line('.')
   let orig = col('.')
   let pat = '^\s*[-+].*\<'.a:varname.'\>'
@@ -113,34 +137,37 @@ function! s:ObjJFindDefinition(varname)
   call cursor(origline, orig)
 
   return CallRuby(printf("ObjectiveJ::Completion.predict_variable_type('%s', '%s')", line, a:varname))
+  endtry
 endfunction
 
-function! s:ObjJPredictPreType()
+function! s:PredictPreType()
   let orig = col('.')
 
   call search('\s', 'b')
   call search('\S', 'b')
 
-  let type = s:ObjJPredictType()
+  let type = s:PredictType()
   call cursor(line('.'), orig)
   return type
 endfunction
 
-function! ObjJCurrentClass(superclass)
+function! s:CurrentClass(superclass)
   let origline = line('.')
   let orig = col('.')
-  let pat = '@implementation\s\+\(\h\w\+\)\s\(:\s*\(\h\w\+\)\)\?'
+  let pat = '@implementation\s\+\(\h\w\+\)\s*\((\h\w\+)\)\?\s*\(:\s*\(\h\w\+\)\)\?'
 
   call search(pat, 'b')
   let matches = matchlist(getline('.'), pat)
   call cursor(origline, orig)
+
+  let prefix = s:MethodPrefix()
   if a:superclass == 1
-    if len(matches[3])
-      return matches[3]
+    if len(matches[4])
+      return prefix.(matches[4])
     else
-      return CallRuby(printf("ObjectiveJ::Completion.get_superclass('%s')", matches[1]))
+      return prefix.CallRuby(printf("ObjectiveJ::Completion.get_superclass('%s')", matches[1]))
     endif
   else
-    return matches[1]
+    return prefix.(matches[1])
   endif
 endfunction

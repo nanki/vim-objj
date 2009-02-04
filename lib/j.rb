@@ -67,6 +67,7 @@ module ObjectiveJ
       @annotation = {}
     end
 
+    # FIXME line-based
     def read_from(lines)
       lines.each_line do |line|
         case line
@@ -126,6 +127,8 @@ module ObjectiveJ
             @functions << "#{$1}(#{$2})"
           end
         when /^\w+\s*=.*;/
+          # constants?
+          process_annotation
         when /function/
           process_annotation
         when /^#{IDENT}=[^;]+;/
