@@ -1,4 +1,4 @@
-function ObjJSelect(direction)
+function! ObjJSelect(direction)
   if !a:direction
     normal F:
   endif
@@ -42,7 +42,7 @@ function ObjJSelect(direction)
   endif
 endfunction
 
-function ObjJSkip()
+function! ObjJSkip()
   let symbol = SymbolUnderCursor(0)
   while SymbolUnderCursor(0) == symbol
     normal l
