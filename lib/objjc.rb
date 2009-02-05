@@ -167,11 +167,11 @@ module ObjectiveJ
   end
 end
 
-Dir.chdir(File.dirname(__FILE__))
-
-D = ObjectiveJ::Info.new
-Dir['*.jd'].map{|name| Marshal.load(open(name))}.each do |info|
-  D.merge(info)
+Dir.chdir(File.dirname(__FILE__)) do
+  D = ObjectiveJ::Info.new
+  Dir['*.jd'].map{|name| Marshal.load(open(name))}.each do |info|
+    D.merge(info)
+  end
 end
 
 D.setup 
