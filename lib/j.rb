@@ -104,7 +104,7 @@ module ObjectiveJ
 
             @methods << Method.new($3.strip, strip(return_type), @current, class_method)
           end
-        when /(\S*)\s+(\S*)\s+@accessors(?:\(([^)]+)\))?/
+        when /(\S*)\s+(\S*)\s+@accessors(?:\(([^)]*)\))?/
           type = $1.strip
           name = $2.strip
 
@@ -150,6 +150,7 @@ module ObjectiveJ
       end
       
       @functions.concat info.functions
+      @properties.concat info.properties
     end
 
     def setup
