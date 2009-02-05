@@ -64,12 +64,31 @@ module ObjectiveJ
       def get_completions(base)
         current = VIM::Buffer.current.line
         cursor = VIM::Window.current.cursor[1] - 1
-        pre = current[0..cursor]
 
+        pre = current[0..cursor].gsub(/[^:.\s\[]*$/, '')
+
+        flag = {}
+        if /\.$/ === pre
+          flag[:property] = true
+        end
+
+        if /\[$/ === pre 
+          flag[:class] = true
+        end
+          
+        if /^\s+$/ === pre 
+          flag[:class] = true
+          flag[:function] = true
+        end
+          
+        if /:$/ === pre 
+          flag[:function] = true
+        end
+        
+        
         list = []
-        case pre.gsub(/[^.\s\[]*$/, '')
-        when /\.$/
-          # property
+
+        if flag[:property]
           properties = D.properties.select{|m| m.name.start_with? base}.map do |m|
             Item.new  :icase => true,
                       :kind => 'm',
@@ -78,7 +97,9 @@ module ObjectiveJ
                       #:abbr => m.description
           end
           list.concat properties
-        when /\[$/, /^\s+$/, /:\s*$/
+        end
+        
+        if flag[:class]
           classes =  self._classes(base).map do |c|
             Item.new :icase => true,
                     :kind => 't',
@@ -86,15 +107,18 @@ module ObjectiveJ
                     :menu => ": #{c.superclass}"
           end
           list.concat classes
+        end
 
+        if flag[:function]
           functions = D.functions.select{|m| m.start_with? base}.map do |m|
             Item.new  :icase => true,
                       :kind => 'f',
                       :word => m
-                      #:abbr => m.description
           end
           list.concat functions
-        else
+        end
+
+        if flag.keys.size.zero?
           types = VIM.evaluate('s:PredictPreType()').split
           methods = self._methods(types, base).map do |m|
             Item.new  :icase => true,
