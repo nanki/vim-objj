@@ -1,3 +1,7 @@
+function! SymbolUnderCursor(tran)
+  return synIDattr(synID(line("."),col("."), a:tran),"name")
+endfunction
+
 function! ObjJSelect(direction)
   if !a:direction
     normal F:
@@ -11,7 +15,7 @@ function! ObjJSelect(direction)
 
   normal l
 
-  let symbol = SymbolUnderCursor(0)
+  let symbol = SymbolUnderCursor(1)
   if symbol =~ 'objjString\|objjNumber'
     let start = col('.')
     call ObjJSkip()
@@ -43,8 +47,8 @@ function! ObjJSelect(direction)
 endfunction
 
 function! ObjJSkip()
-  let symbol = SymbolUnderCursor(0)
-  while SymbolUnderCursor(0) == symbol
+  let symbol = SymbolUnderCursor(1)
+  while s:SymbolUnderCursor(1) == symbol
     normal l
   endwhile
 endfunction
