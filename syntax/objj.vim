@@ -85,7 +85,7 @@ syn region  objjStringD	       start=+"+  skip=+\\\\\|\\"+  end=+"\|$+  contains
 syn region  objjStringS	       start=+'+  skip=+\\\\\|\\'+  end=+'\|$+  contains=objjSpecial,@htmlPreproc
 
 syn match   objjSpecialCharacter "'\\.'"
-syn match   objjNumber	       "-\=\<\d\+L\=\>\|-\?\(\d\+\)\?\.\d\+\>\|0[xX][0-9a-fA-F]\+\>"
+syn match   objjNumber	       "[+-]\=\(\d\+\.\=\d*\|\.\d\+\)\([Ee]\d\+\)\=\|-\=\<\d\+L\=\>\|0[xX][0-9a-fA-F]\+\>"
 syn region  objjRegexpString     start=+/[^/*]+me=e-1 skip=+\\\\\|\\/+ end=+/[gi]\{0,2\}\s*$+ end=+/[gi]\{0,2\}\s*[;.,)\]}]+me=e-1 contains=@htmlPreproc oneline
 
 syn keyword objjConditional	if else switch
