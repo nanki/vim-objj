@@ -65,11 +65,11 @@ module ObjectiveJ
         current = VIM::Buffer.current.line
         cursor = VIM::Window.current.cursor[1] - 1
 
-        pre = current[0..cursor].gsub(/[^:.\[\(]*$/, '')
+        pre = current[0..cursor].gsub(/[^:.\[\(\s]*$/, '')
 
         flag = {}
 
-        case pre
+        case pre.strip
         when /\($/
           flag[:class] = true
           flag[:constants] = true
@@ -82,6 +82,7 @@ module ObjectiveJ
           flag[:function] = true
           flag[:constants] = true
         when /:$/
+          flag[:class] = true
           flag[:function] = true
           flag[:constants] = true
         end
