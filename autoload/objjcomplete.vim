@@ -52,6 +52,9 @@ call s:DefRuby()
 function! s:PredictType()
   try 
     throw getline('.')[col('.') - 1]
+  catch '\['
+    normal %
+    return s:PredictType()
   catch ']'
     let end = col('.')
 
@@ -128,15 +131,27 @@ function! s:FindDefinition(varname)
   catch 'self'
     return [s:CurrentClass(0), s:CurrentClass(1)]
   catch
-  let origline = line('.')
-  let orig = col('.')
-  let pat = '^\s*[-+].*\<'.a:varname.'\>'
+    let origline = line('.')
+    let orig = col('.')
 
-  call search(pat, 'b')
-  let line = getline('.')
-  call cursor(origline, orig)
+    let assign = search('\<'.a:varname.'\>\s*=', 'b')
+    let col = col('.')
 
-  return CallRuby(printf("ObjectiveJ::Completion.predict_variable_type('%s', '%s')", line, a:varname))
+    call cursor(origline, orig)
+
+    let method = search('^\s*[-+].*\<'.a:varname.'\>', 'b')
+    let line = getline('.')
+
+    if assign > method
+      call cursor(assign, col)
+      normal f=w
+      let r = s:PredictType()
+    else
+      let r = CallRuby(printf("ObjectiveJ::Completion.predict_variable_type('%s', '%s')", line, a:varname))
+    endif
+
+    call cursor(origline, orig)
+    return r
   endtry
 endfunction
 

@@ -152,7 +152,7 @@ module ObjectiveJ
             case m.signature
             when 'alloc'
               targets.select{|v| /^\+/ === v}.map{|v| v.gsub(/^\+/,'')}
-            when 'init'
+            when /^init/
               targets
             else
               'id'
