@@ -48,6 +48,8 @@ module ObjectiveJ
     end
   end
 
+  Constant = Struct.new :name, :group
+
   class Info
     include Helper
     TYPE       = /\s*\([^\)]+\)\s*/
@@ -56,12 +58,13 @@ module ObjectiveJ
     METHODDEF  = /^\s*([+-])(#{TYPE})(#{SIGNATURE}+)/
     METHODDEF1 = /^\s*([+-])(#{TYPE})(#{IDENT})/
 
-    attr_reader :classes, :methods, :properties, :functions
+    attr_reader :classes, :methods, :properties, :functions, :constants
     def initialize
       @methods = []
       @properties = []
       @classes = {}
       @functions = []
+      @constants = []
 
       @current = nil
       @annotation = {}
@@ -75,6 +78,8 @@ module ObjectiveJ
           @annotation[:ignore] = true
         when /@global/
           @annotation[:global] = true
+        when /@group\s(#{IDENT})/
+          @annotation[:group] = $1.strip
         when /@implementation\s(#{IDENT})(:(#{IDENT}))?/
           klass = Klass.new(name = $1.strip, superclass = $3 ? $3.strip : nil, true)
 
@@ -126,9 +131,10 @@ module ObjectiveJ
           process_annotation do
             @functions << "#{$1}(#{$2})"
           end
-        when /^\w+\s*=.*;/
-          # constants?
-          process_annotation
+        when /^(\w+)\s*=.*;/
+          process_annotation do
+            @constants << Constant.new($1, @annotation[:group])
+          end
         when /function/
           process_annotation
         when /^#{IDENT}=[^;]+;/
@@ -150,6 +156,7 @@ module ObjectiveJ
       end
       
       @functions.concat info.functions
+      @constants.concat info.constants
       @properties.concat info.properties
     end
 

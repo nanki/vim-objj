@@ -65,26 +65,26 @@ module ObjectiveJ
         current = VIM::Buffer.current.line
         cursor = VIM::Window.current.cursor[1] - 1
 
-        pre = current[0..cursor].gsub(/[^:.\s\[]*$/, '')
+        pre = current[0..cursor].gsub(/[^:.\[\(]*$/, '')
 
         flag = {}
-        if /\.$/ === pre
-          flag[:property] = true
-        end
 
-        if /\[$/ === pre 
+        case pre
+        when /\($/
           flag[:class] = true
-        end
-          
-        if /^\s+$/ === pre 
+          flag[:constants] = true
+          flag[:functions] = true
+        when /\.$/
+          flag[:property] = true
+        when /\[$/
           flag[:class] = true
+        when /^$/
           flag[:function] = true
-        end
-          
-        if /:$/ === pre 
+          flag[:constants] = true
+        when /:$/
           flag[:function] = true
+          flag[:constants] = true
         end
-        
         
         list = []
 
@@ -116,6 +116,16 @@ module ObjectiveJ
                       :word => m
           end
           list.concat functions
+        end
+
+        if flag[:constants]
+          constants = D.constants.select{|m| m.name.start_with? base}.map do |m|
+            Item.new  :icase => true,
+                      :kind => 'd',
+                      :menu => m.group,
+                      :word => m.name
+          end
+          list.concat constants
         end
 
         if flag.keys.size.zero?
