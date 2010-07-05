@@ -59,4 +59,10 @@ imap <buffer> <C-Y> <Esc>:call ObjJSelect(0)<CR>
  map <buffer> <C-Y> <Esc>:call ObjJSelect(0)<CR>
 set omnifunc=objjcomplete#Complete
 
-call extend(g:AutoComplPop_Behavior, {'objj': [{'pattern': '[\[ \.]\w\+$\|:\w*$', 'repeat': 0, 'command': "\<C-X>\<C-O>"}]})
+if exists("g:AutoComplPop_Behavior")
+  call extend(g:AutoComplPop_Behavior, {'objj': [{'pattern': '[\[ \.]\w\+$\|:\w*$', 'repeat': 0, 'command': "\<C-X>\<C-O>"}]})
+endif
+
+if exists('g:neocomplcache_omni_patterns')
+  let g:neocomplcache_omni_patterns.objj = '[\[ \.]\w\+$\|:\w*$'
+endif
