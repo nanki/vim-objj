@@ -57,6 +57,38 @@ imap <buffer> <C-L> <Esc>:call ObjJSelect(1)<CR>
  map <buffer> <C-L> <Esc>:call ObjJSelect(1)<CR>
 imap <buffer> <C-Y> <Esc>:call ObjJSelect(0)<CR>
  map <buffer> <C-Y> <Esc>:call ObjJSelect(0)<CR>
+
+function! ObjJBrace()
+  let line = line('.')
+  let col = col('.')
+  normal %
+  if line('.') == line
+    let rcol = col + 1
+  else
+    let rcol = col
+  endif
+  "let o_v = getreg('a', 1)
+  "let o_t = getregtype('a')
+  if line == line('.') && col == col('.')
+    call cursor(line, col)
+    normal "ayT]
+    call cursor(line, col)
+    normal F]%i[
+    call cursor(line, rcol)
+    try
+      throw getreg('a')
+    catch '^\s\+$'
+      normal i
+    catch
+      normal a
+    endtry
+  else
+    call cursor(line, rcol)
+  endif
+  "call setreg('a', o_v)
+endfunction
+
+inoremap <buffer> ] ]<Esc>:call ObjJBrace()<CR>a
 set omnifunc=objjcomplete#Complete
 
 if exists("g:AutoComplPop_Behavior")
