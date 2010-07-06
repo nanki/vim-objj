@@ -48,7 +48,7 @@ endfunction
 
 function! ObjJSkip()
   let symbol = SymbolUnderCursor(1)
-  while s:SymbolUnderCursor(1) == symbol
+  while SymbolUnderCursor(1) == symbol
     normal l
   endwhile
 endfunction
