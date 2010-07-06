@@ -49,13 +49,17 @@ endfunction
 
 call s:DefRuby()
 
+" Pattern A
+"  [[CPObject alloc] init]
+"  ^^^                   ^
+"  123                   4
 function! s:PredictType()
   try 
     throw getline('.')[col('.') - 1]
-  catch '\['
+  catch '\[' " A1
     normal %
     return s:PredictType()
-  catch ']'
+  catch ']' " A4
     let end = col('.')
 
     normal %
