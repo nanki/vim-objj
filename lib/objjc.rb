@@ -79,12 +79,13 @@ module ObjectiveJ
         when /\[$/
           flag[:class] = true
         when /^$/
-          flag[:function] = true
+          flag[:class] = true
           flag[:constants] = true
+          flag[:function] = true
         when /:$/
           flag[:class] = true
-          flag[:function] = true
           flag[:constants] = true
+          flag[:function] = true
         end
         
         list = []

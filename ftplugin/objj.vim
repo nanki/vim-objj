@@ -41,6 +41,8 @@ function! ObjJSelect(direction)
     endif
   elseif getline('.')[col('.') - 1] =~ '[ \]]'
     startinsert
+  elseif getline('.')[col('.') - 1] == '['
+    normal v%
   else
     normal hveolo
   endif

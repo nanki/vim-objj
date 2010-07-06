@@ -42,7 +42,7 @@ endfunction
 
 function! s:DefRuby()
 ruby << RUBY
-$:.concat VIM::evaluate("&runtimepath").split(',').map{|v| File.join(v, 'lib')}
+(VIM::evaluate("&runtimepath").split(',').map{|v| $:.unshift(File.join(v, 'lib'))})
 require 'objjc'
 RUBY
 endfunction
@@ -65,13 +65,15 @@ function! s:PredictType()
 
     try
       throw getline('.')[col('.') - 1:-1]
-    catch '^\u'
+    catch '^\u' " A3
       normal "ayew
       let target = ['+'.getreg('a')]
-    catch '^@"\|^"'
+    catch '^@"\|^"' " A2
       let target = ['CPString']
       call ObjJSkip()
       normal w
+    catch '^]'
+      return ['CPArray']
     catch '^\['
       normal %w
       let target = s:PredictPreType()
