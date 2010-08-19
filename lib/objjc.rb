@@ -131,7 +131,7 @@ module ObjectiveJ
         end
 
         if flag.keys.size.zero?
-          types = VIM.evaluate('s:PredictPreType()').split
+          types = VIM.evaluate('s:PredictPreType()').to_a
           methods = self._methods(types, base).map do |m|
             Item.new  :icase => true,
                       :kind => 'f',
