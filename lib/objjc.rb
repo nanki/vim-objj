@@ -189,8 +189,7 @@ module ObjectiveJ
           args = md[3].scan(ObjectiveJ::Info::SIGNATURE)
           info = args.find{|v| v[2].strip == varname}
           if info 
-            _return strip([info[1]])
-            return
+            return _return strip(info[1])
           end
         end
         _return ['id']

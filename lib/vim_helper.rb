@@ -19,10 +19,14 @@ module VimHelper
   end
 
   def _return(val)
-    VIM::command("
-    if exists('s:objj_generic_return')
-      unlet s:objj_generic_return
-    endif")
-    VIM::command("let s:objj_generic_return = #{convert(val)}")
+    if defined? VIM
+      VIM::command("
+      if exists('s:objj_generic_return')
+        unlet s:objj_generic_return
+      endif")
+      VIM::command("let s:objj_generic_return = #{convert(val)}")
+    end
+
+    val
   end
 end
