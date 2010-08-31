@@ -153,7 +153,7 @@ function! s:FindDefinition(varname)
       normal f=w
       let r = s:PredictType()
     else
-      let r = CallRuby(printf("ObjectiveJ::Completion.predict_variable_type('%s', '%s')", line, a:varname))
+      let r = CallRuby(printf("ObjectiveJ::Completion.predict_argument_type('%s', '%s')", line, a:varname))
     endif
 
     call cursor(origline, orig)

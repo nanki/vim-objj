@@ -184,7 +184,7 @@ module ObjectiveJ
         _return types.flatten.to_a.uniq
       end
 
-      def predict_variable_type(line, varname)
+      def predict_argument_type(line, varname)
         if md = ObjectiveJ::Info::METHODDEF.match(line)
           args = md[3].scan(ObjectiveJ::Info::SIGNATURE)
           info = args.find{|v| v[2].strip == varname}
