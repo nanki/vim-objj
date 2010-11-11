@@ -12,8 +12,8 @@ module ObjectiveJ
     class Item < Hash
       ATTRIBUTES = [:word, :abbr, :menu, :info, :kind, :icase, :dup]
 
-      def initialize(hash) 
-        ATTRIBUTES.each do |key| 
+      def initialize(hash)
+        ATTRIBUTES.each do |key|
           self[key] = hash[key] if hash[key]
         end
       end
@@ -38,7 +38,7 @@ module ObjectiveJ
               class_name = class_name[1..-1]
               class_method = true
             else
-              class_method = false 
+              class_method = false
             end
 
             next unless klass = D.classes[class_name]
@@ -87,7 +87,7 @@ module ObjectiveJ
           flag[:constants] = true
           flag[:function] = true
         end
-        
+
         list = []
 
         if flag[:property]
@@ -100,7 +100,7 @@ module ObjectiveJ
           end
           list.concat properties
         end
-        
+
         if flag[:class]
           classes =  self._classes(base).map do |c|
             Item.new :icase => true,
@@ -131,7 +131,7 @@ module ObjectiveJ
         end
 
         if flag.keys.size.zero?
-          types = VIM.evaluate('s:PredictPreType()').split
+          types = Array(VIM.evaluate('s:PredictPreType()')).first.split
           methods = self._methods(types, base).map do |m|
             Item.new  :icase => true,
                       :kind => 'f',
@@ -150,12 +150,12 @@ module ObjectiveJ
         # FIXME tenuki
         signature = message.scan(/[^\]:]+:?/)[0]
 
-        if targets.empty? 
+        if targets.empty?
           methods = D.methods.select{|m| !m.class_method?}.select{|m| m.signature.start_with? signature}
         else
           methods = self._methods(targets.flatten, signature)
         end
-        
+
         methods.reject!{|m| m.signature != signature} unless /:/ === message
 
         types = methods.map do |m|
@@ -188,7 +188,7 @@ module ObjectiveJ
         if md = ObjectiveJ::Info::METHODDEF.match(line)
           args = md[3].scan(ObjectiveJ::Info::SIGNATURE)
           info = args.find{|v| v[2].strip == varname}
-          if info 
+          if info
             _return strip([info[1]])
             return
           end
@@ -196,7 +196,7 @@ module ObjectiveJ
         _return ['id']
       end
 
-      def get_superclass(class_name) 
+      def get_superclass(class_name)
         _return D.classes[class_name.strip].superclass.to_s if D.classes[class_name.strip]
       end
     end
@@ -210,4 +210,4 @@ Dir.chdir(File.dirname(__FILE__)) do
   end
 end
 
-D.setup 
+D.setup
