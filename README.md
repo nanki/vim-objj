@@ -2,7 +2,7 @@
 
 ##Install
 
-    $ git clone git://github.com/nanki/objj-vim
+    $ git clone git://github.com/nanki/vim-objj
     $ vi .vimrc
     set runtimepath+=path/to/objjvim
     au BufNewFile,BufRead *.j,Jakefile setf objj
