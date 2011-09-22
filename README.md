@@ -5,7 +5,6 @@
     $ git clone git://github.com/nanki/vim-objj
     $ vi .vimrc
     set runtimepath+=path/to/objjvim
-    au BufNewFile,BufRead *.j,Jakefile setf objj
 
 ##Demo
   Checkout Youtube movie that shows the plugin in action.
